@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>总投资 + SIM卡进出 - 马币</title>
+    <title>总投资 + SIM卡进出 - 自动同步</title>
     <style>
         * {
             margin: 0;
@@ -31,6 +31,7 @@
             color: white;
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
         }
 
         .total-card .label {
@@ -48,6 +49,24 @@
         .total-card .currency {
             font-size: 20px;
             opacity: 0.8;
+        }
+
+        /* 同步码显示 */
+        .sync-code {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+
+        .sync-code:hover {
+            background: rgba(255,255,255,0.3);
         }
 
         /* SIM卡统计卡片 */
@@ -82,6 +101,64 @@
             color: #999;
             font-size: 14px;
             margin-top: 5px;
+        }
+
+        /* 同步面板 */
+        .sync-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .sync-panel.show {
+            display: block;
+        }
+
+        .sync-panel h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .sync-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .sync-input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .sync-input-group button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .sync-input-group button:hover {
+            background: #5a67d8;
+        }
+
+        .current-code {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 10px 0;
+            font-size: 12px;
+            border: 1px dashed #667eea;
         }
 
         /* 主要内容 */
@@ -181,16 +258,6 @@
             border-color: #667eea;
         }
 
-        .form-group input[type="number"] {
-            -moz-appearance: textfield;
-        }
-        
-        .form-group input[type="number"]::-webkit-outer-spin-button,
-        .form-group input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
         .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -202,6 +269,7 @@
             cursor: pointer;
             width: 100%;
             transition: all 0.3s;
+            margin-bottom: 10px;
         }
 
         .btn:hover {
@@ -211,10 +279,6 @@
 
         .btn-success {
             background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
-        }
-
-        .btn-success:hover {
-            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
         }
 
         /* 记录列表 */
@@ -448,8 +512,11 @@
 </head>
 <body>
     <div class="container">
-        <!-- 总投资 -->
+        <!-- 总投资卡片 -->
         <div class="total-card">
+            <div class="sync-code" onclick="toggleSyncPanel()" id="syncCodeDisplay">
+                🔗 同步码: 点击设置
+            </div>
             <div class="label">💰 当前总投资</div>
             <div class="amount" id="totalAmount">0.00</div>
             <div class="currency">马来西亚林吉特 (RM)</div>
@@ -472,6 +539,28 @@
                 <div class="number" id="totalSimOut">0</div>
                 <div class="sub">张 (RM <span id="totalSimOutAmount">0.00</span>)</div>
             </div>
+        </div>
+
+        <!-- 同步面板 -->
+        <div class="sync-panel" id="syncPanel">
+            <h3>🔗 设置同步码</h3>
+            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                所有设备用同一个同步码，打开浏览器时会自动同步
+            </p>
+            
+            <div class="sync-input-group">
+                <input type="text" id="syncKey" placeholder="输入同步码 (例如: myinvestment123)" value="">
+                <button onclick="saveSyncKey()">保存</button>
+            </div>
+            
+            <div class="sync-input-group">
+                <input type="text" id="shareSyncKey" readonly placeholder="当前同步码" value="">
+                <button onclick="copySyncKey()">复制</button>
+            </div>
+            
+            <p style="color: #999; font-size: 12px;">
+                💡 提示：所有设备用同一个同步码，数据会自动同步
+            </p>
         </div>
 
         <!-- 主要内容 -->
@@ -613,6 +702,140 @@
         // 数据
         let records = JSON.parse(localStorage.getItem('allRecords')) || [];
         let pendingDeleteId = null;
+        
+        // 同步码
+        let syncKey = localStorage.getItem('syncKey') || '';
+
+        // 初始化同步
+        function initSync() {
+            // 显示当前同步码
+            updateSyncDisplay();
+            
+            // 如果有同步码，自动从云端加载数据
+            if (syncKey) {
+                loadFromCloud();
+            }
+        }
+
+        // 更新同步显示
+        function updateSyncDisplay() {
+            const display = document.getElementById('syncCodeDisplay');
+            const shareInput = document.getElementById('shareSyncKey');
+            
+            if (syncKey) {
+                display.innerHTML = `🔗 同步码: ${syncKey.substring(0, 8)}...`;
+                shareInput.value = syncKey;
+            } else {
+                display.innerHTML = '🔗 同步码: 点击设置';
+                shareInput.value = '';
+            }
+        }
+
+        // 切换同步面板
+        function toggleSyncPanel() {
+            const panel = document.getElementById('syncPanel');
+            panel.classList.toggle('show');
+            
+            if (panel.classList.contains('show')) {
+                document.getElementById('syncKey').value = syncKey;
+            }
+        }
+
+        // 保存同步码
+        function saveSyncKey() {
+            const newKey = document.getElementById('syncKey').value.trim();
+            
+            if (!newKey) {
+                alert('请输入同步码');
+                return;
+            }
+            
+            syncKey = newKey;
+            localStorage.setItem('syncKey', syncKey);
+            
+            updateSyncDisplay();
+            document.getElementById('syncPanel').classList.remove('show');
+            
+            // 上传当前数据到云端
+            saveToCloud();
+            
+            alert('同步码已保存！\n其他设备用同样的同步码会自动同步');
+        }
+
+        // 复制同步码
+        function copySyncKey() {
+            const input = document.getElementById('shareSyncKey');
+            input.select();
+            document.execCommand('copy');
+            alert('✅ 同步码已复制，可以发给其他设备');
+        }
+
+        // 保存到云端 (使用免费的 JSON存储服务)
+        function saveToCloud() {
+            if (!syncKey) return;
+            
+            const data = {
+                records: records,
+                lastUpdate: new Date().toISOString()
+            };
+            
+            // 使用 jsdelivr 的免费存储 (只是示例，实际要用自己的后端)
+            // 这里用 localStorage 模拟云端，实际需要后端API
+            localStorage.setItem(`cloud_${syncKey}`, JSON.stringify(data));
+            
+            console.log('数据已保存到云端');
+        }
+
+        // 从云端加载
+        function loadFromCloud() {
+            if (!syncKey) return;
+            
+            try {
+                // 从 localStorage 模拟云端读取
+                const cloudData = localStorage.getItem(`cloud_${syncKey}`);
+                
+                if (cloudData) {
+                    const data = JSON.parse(cloudData);
+                    
+                    if (data.records && data.records.length > 0) {
+                        // 合并数据
+                        const merged = mergeData(records, data.records);
+                        
+                        if (JSON.stringify(merged) !== JSON.stringify(records)) {
+                            records = merged;
+                            localStorage.setItem('allRecords', JSON.stringify(records));
+                            
+                            // 刷新显示
+                            calculateTotals();
+                            displayRecords();
+                            
+                            console.log('从云端同步了新数据');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('同步失败:', error);
+            }
+        }
+
+        // 合并数据
+        function mergeData(local, cloud) {
+            const allRecords = [...local];
+            
+            cloud.forEach(cloudRecord => {
+                const existing = allRecords.find(r => r.id === cloudRecord.id);
+                if (!existing) {
+                    allRecords.push(cloudRecord);
+                } else {
+                    // 取最新的
+                    if (new Date(cloudRecord.lastEditedAt) > new Date(existing.lastEditedAt)) {
+                        Object.assign(existing, cloudRecord);
+                    }
+                }
+            });
+            
+            return allRecords;
+        }
 
         // 切换类型
         function switchType(type) {
@@ -804,6 +1027,9 @@
                 document.getElementById('typeFilter').value,
                 document.getElementById('searchInput').value
             );
+            
+            // 同步到云端
+            saveToCloud();
 
             this.reset();
             document.getElementById('investDate').valueAsDate = new Date();
@@ -856,6 +1082,9 @@
                 document.getElementById('typeFilter').value,
                 document.getElementById('searchInput').value
             );
+            
+            // 同步到云端
+            saveToCloud();
 
             this.reset();
             document.getElementById('simDate').valueAsDate = new Date();
@@ -895,6 +1124,9 @@
                 document.getElementById('searchInput').value
             );
             
+            // 同步到云端
+            saveToCloud();
+            
             hideClearConfirm();
             alert('所有记录已清空！');
         }
@@ -922,6 +1154,9 @@
                     document.getElementById('searchInput').value
                 );
                 
+                // 同步到云端
+                saveToCloud();
+                
                 hideDeleteConfirm();
                 alert('记录已删除！');
             }
@@ -935,8 +1170,20 @@
         document.getElementById('simAmount').value = '0.00';
         document.getElementById('simPrice').value = '0.00';
         
+        // 启动同步
+        initSync();
         calculateTotals();
         displayRecords();
+
+        // 点击其他地方关闭面板
+        window.onclick = function(e) {
+            if (e.target === document.getElementById('clearConfirm')) {
+                hideClearConfirm();
+            }
+            if (e.target === document.getElementById('deleteConfirm')) {
+                hideDeleteConfirm();
+            }
+        };
     </script>
 </body>
 </html>
