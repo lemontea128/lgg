@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>总投资 + SIM卡进出 - 马币</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 总投资卡片 */
+        .total-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .total-card .label {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .total-card .amount {
+            font-size: 60px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .total-card .currency {
+            font-size: 20px;
+            opacity: 0.8;
+        }
+
+        /* SIM卡统计卡片 */
+        .sim-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .sim-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .sim-card .title {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .sim-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .sim-card .sub {
+            color: #999;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* 主要内容 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 20px;
+        }
+
+        /* 表单 */
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .form-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .clear-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .type-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .type-tab {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .type-tab:hover {
+            border-color: #667eea;
+        }
+
+        .type-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        
+        .form-group input[type="number"]::-webkit-outer-spin-button,
+        .form-group input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102,126,234,0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+        }
+
+        /* 记录列表 */
+        .records-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-height: 700px;
+            overflow-y: auto;
+        }
+
+        .records-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .record-count {
+            background: #667eea;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .record-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            transition: all 0.2s;
+        }
+
+        .record-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+
+        .record-item.invest-add {
+            border-left-color: #27ae60;
+        }
+
+        .record-item.invest-sub {
+            border-left-color: #e74c3c;
+        }
+
+        .record-item.sim-in {
+            border-left-color: #3498db;
+        }
+
+        .record-item.sim-out {
+            border-left-color: #f39c12;
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .record-type {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        .type-invest-add {
+            background: #d4efdf;
+            color: #27ae60;
+        }
+
+        .type-invest-sub {
+            background: #fadbd8;
+            color: #e74c3c;
+        }
+
+        .type-sim-in {
+            background: #d4e6f1;
+            color: #3498db;
+        }
+
+        .type-sim-out {
+            background: #fef5e7;
+            color: #f39c12;
+        }
+
+        .record-amount {
+            font-weight: bold;
+        }
+
+        .record-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .record-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #999;
+            border-top: 1px dashed #ddd;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .delete-btn:hover {
+            text-decoration: underline;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar select,
+        .filter-bar input {
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .filter-bar select {
+            flex: 0 0 120px;
+        }
+
+        .filter-bar input {
+            flex: 1;
+        }
+
+        /* 确认对话框 */
+        .confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .confirm-dialog.show {
+            display: flex;
+        }
+
+        .confirm-box {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .confirm-box h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .confirm-box p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .confirm-btn {
+            padding: 10px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .confirm-btn.yes {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .confirm-btn.yes:hover {
+            background: #c0392b;
+        }
+
+        .confirm-btn.no {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .confirm-btn.no:hover {
+            background: #7f8c8d;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sim-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 总投资 -->
+        <div class="total-card">
+            <div class="label">💰 当前总投资</div>
+            <div class="amount" id="totalAmount">0.00</div>
+            <div class="currency">马来西亚林吉特 (RM)</div>
+        </div>
+
+        <!-- SIM卡统计 -->
+        <div class="sim-stats">
+            <div class="sim-card">
+                <div class="title">📱 SIM卡总数量</div>
+                <div class="number" id="totalSimCards">0</div>
+                <div class="sub">张</div>
+            </div>
+            <div class="sim-card">
+                <div class="title">📥 SIM卡总进</div>
+                <div class="number" id="totalSimIn">0</div>
+                <div class="sub">张 (RM <span id="totalSimInAmount">0.00</span>)</div>
+            </div>
+            <div class="sim-card">
+                <div class="title">📤 SIM卡总出</div>
+                <div class="number" id="totalSimOut">0</div>
+                <div class="sub">张 (RM <span id="totalSimOutAmount">0.00</span>)</div>
+            </div>
+        </div>
+
+        <!-- 主要内容 -->
+        <div class="main-content">
+            <!-- 表单 -->
+            <div class="form-container">
+                <h2>
+                    📝 添加记录
+                    <button class="clear-btn" onclick="showClearConfirm()">🗑️ 清空所有</button>
+                </h2>
+                
+                <!-- 类型切换 -->
+                <div class="type-tabs">
+                    <div class="type-tab active" onclick="switchType('invest')" id="tab-invest">💰 总投资</div>
+                    <div class="type-tab" onclick="switchType('sim')" id="tab-sim">📱 SIM卡</div>
+                </div>
+                
+                <form id="investForm" style="display: block;">
+                    <div class="form-group">
+                        <label>日期</label>
+                        <input type="date" id="investDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>操作</label>
+                        <select id="investOperation" required>
+                            <option value="add">➕ 放钱 (增加总投资)</option>
+                            <option value="subtract">➖ 拿钱 (减少总投资)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>金额 (RM)</label>
+                        <input type="number" id="investAmount" placeholder="0.00" min="0" step="0.01" value="0.00" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>描述</label>
+                        <input type="text" id="investDesc" placeholder="例如: 银行转账" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>记录人</label>
+                        <input type="text" id="investCreator" placeholder="您的名字" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">💰 添加总投资记录</button>
+                </form>
+
+                <form id="simForm" style="display: none;">
+                    <div class="form-group">
+                        <label>日期</label>
+                        <input type="date" id="simDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>类型</label>
+                        <select id="simType" required>
+                            <option value="in">📥 SIM卡进 (买卡)</option>
+                            <option value="out">📤 SIM卡出 (卖卡)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>SIM卡数量 (张)</label>
+                        <input type="number" id="simQuantity" placeholder="0" min="0" step="1" value="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>金额 (RM)</label>
+                        <input type="number" id="simAmount" placeholder="0.00" min="0" step="0.01" value="0.00" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>单价 (RM/张)</label>
+                        <input type="text" id="simPrice" readonly placeholder="自动计算" value="0.00">
+                    </div>
+
+                    <div class="form-group">
+                        <label>描述</label>
+                        <textarea id="simDesc" placeholder="例如: 从XX买的SIM卡" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>记录人</label>
+                        <input type="text" id="simCreator" placeholder="您的名字" required>
+                    </div>
+
+                    <button type="submit" class="btn">📱 添加SIM卡记录</button>
+                </form>
+            </div>
+
+            <!-- 记录列表 -->
+            <div class="records-container">
+                <h2>
+                    交易记录
+                    <span class="record-count" id="recordCount">0</span>
+                </h2>
+
+                <div class="filter-bar">
+                    <select id="typeFilter">
+                        <option value="all">全部</option>
+                        <option value="invest">💰 总投资</option>
+                        <option value="sim">📱 SIM卡</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="搜索描述...">
+                </div>
+
+                <div id="recordsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 清空确认对话框 -->
+    <div class="confirm-dialog" id="clearConfirm">
+        <div class="confirm-box">
+            <h3>⚠️ 确认清空</h3>
+            <p>确定要清空所有记录吗？<br>此操作不可恢复！</p>
+            <div class="confirm-buttons">
+                <button class="confirm-btn yes" onclick="clearAllRecords()">是的，清空</button>
+                <button class="confirm-btn no" onclick="hideClearConfirm()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除单条确认对话框 -->
+    <div class="confirm-dialog" id="deleteConfirm">
+        <div class="confirm-box">
+            <h3>⚠️ 确认删除</h3>
+            <p>确定要删除这条记录吗？</p>
+            <div class="confirm-buttons">
+                <button class="confirm-btn yes" onclick="confirmDelete()">是的，删除</button>
+                <button class="confirm-btn no" onclick="hideDeleteConfirm()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据
+        let records = JSON.parse(localStorage.getItem('allRecords')) || [];
+        let pendingDeleteId = null;
+
+        // 切换类型
+        function switchType(type) {
+            if (type === 'invest') {
+                document.getElementById('tab-invest').classList.add('active');
+                document.getElementById('tab-sim').classList.remove('active');
+                document.getElementById('investForm').style.display = 'block';
+                document.getElementById('simForm').style.display = 'none';
+            } else {
+                document.getElementById('tab-sim').classList.add('active');
+                document.getElementById('tab-invest').classList.remove('active');
+                document.getElementById('simForm').style.display = 'block';
+                document.getElementById('investForm').style.display = 'none';
+            }
+        }
+
+        // 计算单价
+        document.getElementById('simQuantity').addEventListener('input', calculatePrice);
+        document.getElementById('simAmount').addEventListener('input', calculatePrice);
+
+        function calculatePrice() {
+            const quantity = parseFloat(document.getElementById('simQuantity').value) || 0;
+            const amount = parseFloat(document.getElementById('simAmount').value) || 0;
+            const priceInput = document.getElementById('simPrice');
+            
+            if (quantity > 0) {
+                priceInput.value = (amount / quantity).toFixed(2);
+            } else {
+                priceInput.value = '0.00';
+            }
+        }
+
+        // 计算所有数据
+        function calculateTotals() {
+            let totalInvestment = 0;
+            let totalSimCards = 0;
+            let totalSimIn = 0;
+            let totalSimOut = 0;
+            let totalSimInAmount = 0;
+            let totalSimOutAmount = 0;
+
+            records.forEach(record => {
+                const amount = parseFloat(record.amount) || 0;
+                
+                if (record.category === 'invest') {
+                    // 总投资
+                    if (record.operation === 'add') {
+                        totalInvestment += amount;
+                    } else {
+                        totalInvestment -= amount;
+                    }
+                } else {
+                    // SIM卡
+                    const quantity = parseInt(record.quantity) || 0;
+                    if (record.type === 'in') {
+                        totalInvestment -= amount;
+                        totalSimCards += quantity;
+                        totalSimIn += quantity;
+                        totalSimInAmount += amount;
+                    } else {
+                        totalInvestment += amount;
+                        totalSimCards -= quantity;
+                        totalSimOut += quantity;
+                        totalSimOutAmount += amount;
+                    }
+                }
+            });
+
+            // 更新显示
+            document.getElementById('totalAmount').textContent = totalInvestment.toFixed(2);
+            document.getElementById('totalSimCards').textContent = totalSimCards;
+            document.getElementById('totalSimIn').textContent = totalSimIn;
+            document.getElementById('totalSimOut').textContent = totalSimOut;
+            document.getElementById('totalSimInAmount').textContent = totalSimInAmount.toFixed(2);
+            document.getElementById('totalSimOutAmount').textContent = totalSimOutAmount.toFixed(2);
+
+            return { totalInvestment, totalSimCards };
+        }
+
+        // 显示记录
+        function displayRecords(categoryFilter = 'all', searchTerm = '') {
+            const list = document.getElementById('recordsList');
+            
+            let filtered = records.filter(r => {
+                if (categoryFilter !== 'all' && r.category !== categoryFilter) return false;
+                if (searchTerm && !(r.desc || '').toLowerCase().includes(searchTerm.toLowerCase())) return false;
+                return true;
+            });
+
+            document.getElementById('recordCount').textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">暂无记录</p>';
+                return;
+            }
+
+            list.innerHTML = filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).map(record => {
+                if (record.category === 'invest') {
+                    // 总投资记录
+                    return `
+                    <div class="record-item invest-${record.operation}">
+                        <div class="record-header">
+                            <span class="record-type type-invest-${record.operation}">
+                                💰 总投资 ${record.operation === 'add' ? '放钱' : '拿钱'}
+                            </span>
+                            <span class="record-amount" style="color: ${record.operation === 'add' ? '#27ae60' : '#e74c3c'}">
+                                ${record.operation === 'add' ? '+' : '-'}RM ${parseFloat(record.amount).toFixed(2)}
+                            </span>
+                        </div>
+                        
+                        <div style="background: #fff; padding: 8px; border-radius: 5px; margin: 5px 0;">
+                            📝 ${record.desc || '-'}
+                        </div>
+                        
+                        <div class="record-footer">
+                            <span>👤 记录: ${record.creator} (${record.date})</span>
+                            <span>
+                                ✏️ 编辑: ${record.lastEditor || record.creator}
+                                <button class="delete-btn" onclick="showDeleteConfirm('${record.id}')">删除</button>
+                            </span>
+                        </div>
+                    </div>
+                `;
+                } else {
+                    // SIM卡记录
+                    const pricePerCard = (parseFloat(record.amount) / parseInt(record.quantity)).toFixed(2);
+                    return `
+                    <div class="record-item sim-${record.type}">
+                        <div class="record-header">
+                            <span class="record-type type-sim-${record.type}">
+                                📱 SIM卡 ${record.type === 'in' ? '进' : '出'}
+                            </span>
+                            <span class="record-amount" style="color: ${record.type === 'in' ? '#e74c3c' : '#27ae60'}">
+                                ${record.type === 'in' ? '-' : '+'}RM ${parseFloat(record.amount).toFixed(2)}
+                            </span>
+                        </div>
+                        
+                        <div class="record-details">
+                            <span>📅 ${record.date}</span>
+                            <span>📱 ${record.quantity}张</span>
+                            <span>💰 RM ${pricePerCard}/张</span>
+                        </div>
+                        
+                        <div style="background: #fff; padding: 8px; border-radius: 5px; margin: 5px 0;">
+                            📝 ${record.desc || '-'}
+                        </div>
+                        
+                        <div class="record-footer">
+                            <span>👤 记录: ${record.creator}</span>
+                            <span>
+                                ✏️ 编辑: ${record.lastEditor || record.creator}
+                                <button class="delete-btn" onclick="showDeleteConfirm('${record.id}')">删除</button>
+                            </span>
+                        </div>
+                    </div>
+                `;
+                }
+            }).join('');
+        }
+
+        // 提交总投资表单
+        document.getElementById('investForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const amount = document.getElementById('investAmount').value;
+            if (amount === '' || parseFloat(amount) < 0) {
+                alert('请输入有效的金额');
+                return;
+            }
+
+            const newRecord = {
+                id: Date.now().toString(),
+                category: 'invest',
+                date: document.getElementById('investDate').value,
+                operation: document.getElementById('investOperation').value,
+                amount: amount,
+                desc: document.getElementById('investDesc').value,
+                creator: document.getElementById('investCreator').value,
+                createdAt: new Date().toISOString(),
+                lastEditor: document.getElementById('investCreator').value,
+                lastEditedAt: new Date().toISOString()
+            };
+
+            records.push(newRecord);
+            localStorage.setItem('allRecords', JSON.stringify(records));
+
+            calculateTotals();
+            displayRecords(
+                document.getElementById('typeFilter').value,
+                document.getElementById('searchInput').value
+            );
+
+            this.reset();
+            document.getElementById('investDate').valueAsDate = new Date();
+            document.getElementById('investAmount').value = '0.00';
+
+            alert('总投资记录添加成功！');
+        });
+
+        // 提交SIM卡表单
+        document.getElementById('simForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const quantity = document.getElementById('simQuantity').value;
+            const amount = document.getElementById('simAmount').value;
+
+            if (quantity === '' || parseFloat(quantity) < 0) {
+                alert('请输入有效的SIM卡数量');
+                return;
+            }
+
+            if (amount === '' || parseFloat(amount) < 0) {
+                alert('请输入有效的金额');
+                return;
+            }
+
+            if (parseFloat(quantity) === 0 && parseFloat(amount) === 0) {
+                alert('数量和金额不能同时为0');
+                return;
+            }
+
+            const newRecord = {
+                id: Date.now().toString(),
+                category: 'sim',
+                date: document.getElementById('simDate').value,
+                type: document.getElementById('simType').value,
+                quantity: quantity,
+                amount: amount,
+                desc: document.getElementById('simDesc').value,
+                creator: document.getElementById('simCreator').value,
+                createdAt: new Date().toISOString(),
+                lastEditor: document.getElementById('simCreator').value,
+                lastEditedAt: new Date().toISOString()
+            };
+
+            records.push(newRecord);
+            localStorage.setItem('allRecords', JSON.stringify(records));
+
+            calculateTotals();
+            displayRecords(
+                document.getElementById('typeFilter').value,
+                document.getElementById('searchInput').value
+            );
+
+            this.reset();
+            document.getElementById('simDate').valueAsDate = new Date();
+            document.getElementById('simQuantity').value = '0';
+            document.getElementById('simAmount').value = '0.00';
+            document.getElementById('simPrice').value = '0.00';
+
+            alert('SIM卡记录添加成功！');
+        });
+
+        // 筛选和搜索
+        document.getElementById('typeFilter').addEventListener('change', function() {
+            displayRecords(this.value, document.getElementById('searchInput').value);
+        });
+
+        document.getElementById('searchInput').addEventListener('input', function() {
+            displayRecords(document.getElementById('typeFilter').value, this.value);
+        });
+
+        // 清空确认框
+        function showClearConfirm() {
+            document.getElementById('clearConfirm').classList.add('show');
+        }
+
+        function hideClearConfirm() {
+            document.getElementById('clearConfirm').classList.remove('show');
+        }
+
+        // 清空所有记录
+        function clearAllRecords() {
+            records = [];
+            localStorage.setItem('allRecords', JSON.stringify(records));
+            
+            calculateTotals();
+            displayRecords(
+                document.getElementById('typeFilter').value,
+                document.getElementById('searchInput').value
+            );
+            
+            hideClearConfirm();
+            alert('所有记录已清空！');
+        }
+
+        // 删除单条确认框
+        function showDeleteConfirm(id) {
+            pendingDeleteId = id;
+            document.getElementById('deleteConfirm').classList.add('show');
+        }
+
+        function hideDeleteConfirm() {
+            pendingDeleteId = null;
+            document.getElementById('deleteConfirm').classList.remove('show');
+        }
+
+        // 确认删除单条
+        function confirmDelete() {
+            if (pendingDeleteId) {
+                records = records.filter(r => r.id !== pendingDeleteId);
+                localStorage.setItem('allRecords', JSON.stringify(records));
+                
+                calculateTotals();
+                displayRecords(
+                    document.getElementById('typeFilter').value,
+                    document.getElementById('searchInput').value
+                );
+                
+                hideDeleteConfirm();
+                alert('记录已删除！');
+            }
+        }
+
+        // 初始化
+        document.getElementById('investDate').valueAsDate = new Date();
+        document.getElementById('simDate').valueAsDate = new Date();
+        document.getElementById('investAmount').value = '0.00';
+        document.getElementById('simQuantity').value = '0';
+        document.getElementById('simAmount').value = '0.00';
+        document.getElementById('simPrice').value = '0.00';
+        
+        calculateTotals();
+        displayRecords();
+    </script>
+</body>
+</html>
