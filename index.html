@@ -1,9 +1,11 @@
+<!-- 文件名：index.html -->
+<!-- 把这个文件上传到 GitHub -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>总投资 + SIM卡进出 - GitHub Gist 同步</title>
+    <title>总投资 + SIM卡进出 - 云端同步</title>
     <style>
         * {
             margin: 0;
@@ -73,8 +75,19 @@
             box-shadow: 0 0 10px #27ae60;
         }
 
+        .sync-indicator.syncing {
+            background: #3498db;
+            animation: pulse 1s infinite;
+        }
+
         .sync-indicator.error {
             background: #e74c3c;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
 
         .sync-btn {
@@ -92,8 +105,8 @@
             background: rgba(255,255,255,0.3);
         }
 
-        /* Gist 设置卡片 */
-        .gist-setup {
+        /* 设置卡片 */
+        .setup-card {
             background: white;
             border-radius: 15px;
             padding: 25px;
@@ -102,48 +115,48 @@
             border-left: 5px solid #24292e;
         }
 
-        .gist-setup h3 {
+        .setup-card h3 {
             color: #333;
             margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
         .setup-steps {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin: 20px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
 
         .step {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
         }
 
-        .step .number {
-            width: 30px;
-            height: 30px;
+        .step-number {
+            width: 24px;
+            height: 24px;
             background: #24292e;
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 10px;
-            font-weight: bold;
+            font-size: 12px;
+            flex-shrink: 0;
         }
 
-        .step p {
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content p {
             color: #666;
             font-size: 14px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
-        .step .code {
+        .step-content .code {
             background: #333;
             color: white;
             padding: 8px;
@@ -154,24 +167,17 @@
             word-break: break-all;
         }
 
-        .step .code:hover {
+        .step-content .code:hover {
             background: #000;
         }
 
-        .sync-panel {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .sync-input-group {
+        .input-group {
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
         }
 
-        .sync-input-group input {
+        .input-group input {
             flex: 1;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -179,7 +185,7 @@
             font-size: 14px;
         }
 
-        .sync-input-group button {
+        .input-group button {
             padding: 12px 25px;
             background: #24292e;
             color: white;
@@ -189,11 +195,33 @@
             font-weight: 600;
         }
 
-        .sync-input-group button:hover {
+        .input-group button:hover {
             background: #000;
         }
 
-        .sync-info {
+        .auto-sync-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .auto-sync-toggle input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .auto-sync-toggle label {
+            color: #333;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .info-text {
             font-size: 13px;
             color: #666;
             margin-top: 10px;
@@ -203,14 +231,14 @@
         }
 
         /* SIM卡统计卡片 */
-        .sim-stats {
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-bottom: 30px;
         }
 
-        .sim-card {
+        .stat-card {
             background: white;
             border-radius: 15px;
             padding: 20px;
@@ -218,19 +246,19 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        .sim-card .title {
+        .stat-card .title {
             color: #666;
             font-size: 14px;
             margin-bottom: 10px;
         }
 
-        .sim-card .number {
+        .stat-card .number {
             font-size: 32px;
             font-weight: bold;
             color: #333;
         }
 
-        .sim-card .sub {
+        .stat-card .sub {
             color: #999;
             font-size: 14px;
             margin-top: 5px;
@@ -487,13 +515,10 @@
         }
 
         @media (max-width: 768px) {
-            .setup-steps {
-                grid-template-columns: 1fr;
-            }
             .main-content {
                 grid-template-columns: 1fr;
             }
-            .sim-stats {
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -505,68 +530,97 @@
         <div class="total-card">
             <div class="sync-status">
                 <div class="sync-indicator" id="syncIndicator"></div>
-                <button class="sync-btn" onclick="syncFromGist()">📥 拉取</button>
-                <button class="sync-btn" onclick="syncToGist()">📤 推送</button>
+                <button class="sync-btn" onclick="manualSync()">🔄 立即同步</button>
             </div>
             <div class="label">💰 当前总投资</div>
             <div class="amount" id="totalAmount">0.00</div>
             <div class="currency">马来西亚林吉特 (RM)</div>
         </div>
 
-        <!-- Gist 设置向导 -->
-        <div class="gist-setup">
-            <h3>
-                <span>📋 GitHub Gist 同步设置 (无需Token)</span>
-            </h3>
+        <!-- 设置卡片 -->
+        <div class="setup-card">
+            <h3>⚙️ 首次设置（只需一次）</h3>
             
             <div class="setup-steps">
                 <div class="step">
-                    <div class="number">1</div>
-                    <p>复制下面这个Gist ID</p>
-                    <div class="code" onclick="copyText('3a5c5f8d9e2b4c6f8a1d9e3b5c7f9a1d')">
-                        sim-investment-data
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <p>复制下面这段代码</p>
+                        <div class="code" id="scriptCode" onclick="copyScriptCode()">
+                            点击复制 Apps Script 代码
+                        </div>
                     </div>
                 </div>
                 
                 <div class="step">
-                    <div class="number">2</div>
-                    <p>在所有设备输入同一个ID</p>
-                    <div class="code" onclick="copyText('sim-investment-data')">
-                        sim-investment-data
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <p>打开 <a href="https://sheets.new" target="_blank">Google Sheets</a>，创建新表格</p>
+                        <div class="code" onclick="copyText('https://sheets.new')">
+                            sheets.new
+                        </div>
                     </div>
                 </div>
                 
                 <div class="step">
-                    <div class="number">3</div>
-                    <p>点击拉取/推送同步数据</p>
-                    <div class="code">自动合并</div>
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <p>点"扩展程序" → "Apps Script"，粘贴代码</p>
+                        <div class="code" onclick="copyText('扩展程序 → Apps Script')">
+                            点击复制路径
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <p>点"部署" → "新建部署" → "网页应用"</p>
+                        <div class="code" onclick="copyText('部署为网页应用')">
+                            设置谁可以访问：任何人
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <p>复制生成的URL，粘贴到下面</p>
+                        <div class="code" id="urlExample">
+                            https://script.google.com/macros/s/.../exec
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="sync-panel">
-                <div class="sync-input-group">
-                    <input type="text" id="gistId" placeholder="输入Gist ID (例如: sim-investment-data)" value="sim-investment-data">
-                    <button onclick="saveGistId()">保存ID</button>
-                </div>
-                <div class="sync-info" id="syncInfo">
-                    📌 所有设备用同一个ID，手动点击拉取/推送同步
-                </div>
+            <div class="input-group">
+                <input type="text" id="scriptUrl" placeholder="粘贴你的 Web App URL" value="">
+                <button onclick="saveScriptUrl()">保存URL</button>
+            </div>
+            
+            <div class="auto-sync-toggle">
+                <input type="checkbox" id="autoSync" checked onchange="toggleAutoSync()">
+                <label for="autoSync">🌐 开启自动同步（每次打开页面自动同步）</label>
+            </div>
+            
+            <div class="info-text" id="syncInfo">
+                📌 设置完成后，所有设备用同一个URL，数据自动同步
             </div>
         </div>
 
         <!-- SIM卡统计 -->
-        <div class="sim-stats">
-            <div class="sim-card">
+        <div class="stats-grid">
+            <div class="stat-card">
                 <div class="title">📱 SIM卡总数量</div>
                 <div class="number" id="totalSimCards">0</div>
                 <div class="sub">张</div>
             </div>
-            <div class="sim-card">
+            <div class="stat-card">
                 <div class="title">📥 SIM卡总进</div>
                 <div class="number" id="totalSimIn">0</div>
                 <div class="sub">张 (RM <span id="totalSimInAmount">0.00</span>)</div>
             </div>
-            <div class="sim-card">
+            <div class="stat-card">
                 <div class="title">📤 SIM卡总出</div>
                 <div class="number" id="totalSimOut">0</div>
                 <div class="sub">张 (RM <span id="totalSimOutAmount">0.00</span>)</div>
@@ -694,191 +748,283 @@
     </div>
 
     <script>
+        // ================== Apps Script 代码 ==================
+        const APPS_SCRIPT_CODE = `// Google Apps Script - SIM卡投资同步
+function doGet(e) {
+    return handleRequest(e);
+}
+
+function doPost(e) {
+    return handleRequest(e);
+}
+
+function handleRequest(e) {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    // 获取数据
+    if (e.parameter.action === 'get') {
+        var data = sheet.getDataRange().getValues();
+        var records = [];
+        
+        // 第一行是标题，跳过
+        for (var i = 1; i < data.length; i++) {
+            if (data[i][0]) {  // 有ID才算有效记录
+                records.push({
+                    id: data[i][0],
+                    date: data[i][1],
+                    category: data[i][2],
+                    operation: data[i][3],
+                    type: data[i][4],
+                    quantity: data[i][5],
+                    amount: data[i][6],
+                    desc: data[i][7],
+                    creator: data[i][8],
+                    lastEditor: data[i][9],
+                    createdAt: data[i][10],
+                    lastEditedAt: data[i][11]
+                });
+            }
+        }
+        
+        return ContentService.createTextOutput(JSON.stringify({
+            success: true,
+            records: records
+        })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // 保存数据
+    if (e.parameter.action === 'save') {
+        var records = JSON.parse(e.parameter.data);
+        
+        // 清空表格
+        sheet.clearContents();
+        
+        // 写入标题
+        var headers = ['ID', '日期', '类别', '操作', '类型', '数量', '金额', '描述', '记录人', '最后编辑', '创建时间', '最后编辑时间'];
+        sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+        
+        // 写入数据
+        if (records && records.length > 0) {
+            var rows = [];
+            records.forEach(function(r) {
+                rows.push([
+                    r.id || '',
+                    r.date || '',
+                    r.category || '',
+                    r.operation || '',
+                    r.type || '',
+                    r.quantity || '',
+                    r.amount || '',
+                    r.desc || '',
+                    r.creator || '',
+                    r.lastEditor || '',
+                    r.createdAt || '',
+                    r.lastEditedAt || ''
+                ]);
+            });
+            
+            sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+        }
+        
+        return ContentService.createTextOutput(JSON.stringify({
+            success: true,
+            message: '保存成功'
+        })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: '未知操作'
+    })).setMimeType(ContentService.MimeType.JSON);
+}`;
+
         // ================== 数据 ==================
         let records = JSON.parse(localStorage.getItem('allRecords')) || [];
         let pendingDeleteId = null;
-        let gistId = localStorage.getItem('gist_id') || 'sim-investment-data';
+        let scriptUrl = localStorage.getItem('apps_script_url') || '';
+        let autoSyncEnabled = localStorage.getItem('auto_sync') !== 'false';
 
-        // ================== Gist 同步 ==================
+        // ================== 初始化显示 ==================
+        document.getElementById('investDate').valueAsDate = new Date();
+        document.getElementById('simDate').valueAsDate = new Date();
+        document.getElementById('scriptUrl').value = scriptUrl;
+        document.getElementById('autoSync').checked = autoSyncEnabled;
         
+        calculateTotals();
+        displayRecords();
+
+        // ================== 同步功能 ==================
+        
+        // 复制脚本代码
+        function copyScriptCode() {
+            navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(() => {
+                showToast('✅ Apps Script 代码已复制，去粘贴到 Google Apps Script');
+            });
+        }
+
         // 复制文本
         function copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('✅ 已复制: ' + text);
+                showToast('✅ 已复制: ' + text);
             });
+        }
+
+        // 显示提示
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#27ae60' : '#e74c3c'};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                z-index: 9999;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
 
         // 更新同步指示器
         function updateSyncIndicator(status) {
             const indicator = document.getElementById('syncIndicator');
-            if (status === 'synced') {
-                indicator.className = 'sync-indicator synced';
-            } else if (status === 'error') {
-                indicator.className = 'sync-indicator error';
-            } else {
-                indicator.className = 'sync-indicator';
-            }
+            indicator.className = 'sync-indicator ' + status;
         }
 
-        // 保存 Gist ID
-        function saveGistId() {
-            const newId = document.getElementById('gistId').value.trim();
-            if (!newId) {
-                alert('请输入 Gist ID');
+        // 保存URL
+        function saveScriptUrl() {
+            const url = document.getElementById('scriptUrl').value.trim();
+            if (!url) {
+                alert('请输入部署的 URL');
                 return;
             }
             
-            gistId = newId;
-            localStorage.setItem('gist_id', gistId);
-            document.getElementById('syncInfo').innerHTML = '✅ ID已保存: ' + gistId;
-            alert('Gist ID 已保存');
+            scriptUrl = url;
+            localStorage.setItem('apps_script_url', url);
+            document.getElementById('syncInfo').innerHTML = '✅ URL已保存，开始自动同步';
+            
+            // 测试连接
+            testConnection();
         }
 
-        // 推送数据到 Gist
-        async function syncToGist() {
-            if (!gistId) {
-                alert('请先设置 Gist ID');
-                return;
-            }
+        // 切换自动同步
+        function toggleAutoSync() {
+            autoSyncEnabled = document.getElementById('autoSync').checked;
+            localStorage.setItem('auto_sync', autoSyncEnabled);
+        }
 
-            updateSyncIndicator('syncing');
-            
+        // 测试连接
+        async function testConnection() {
             try {
-                // 准备数据
-                const data = {
-                    records: records,
-                    lastUpdate: new Date().toISOString(),
-                    version: '1.0'
-                };
-
-                // 先获取当前 Gist 内容
-                const getResponse = await fetch(`https://api.github.com/gists/${gistId}`);
-                
-                if (getResponse.ok) {
-                    const gist = await getResponse.json();
+                updateSyncIndicator('syncing');
+                const response = await fetch(`${scriptUrl}?action=get`);
+                if (response.ok) {
+                    updateSyncIndicator('synced');
+                    showToast('✅ 连接成功！');
                     
-                    // 更新文件内容
-                    const updateData = {
-                        files: {
-                            'sim-investment.json': {
-                                content: JSON.stringify(data, null, 2)
-                            }
-                        }
-                    };
-
-                    // 发送更新
-                    const updateResponse = await fetch(`https://api.github.com/gists/${gistId}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(updateData)
-                    });
-
-                    if (updateResponse.ok) {
-                        updateSyncIndicator('synced');
-                        alert('✅ 推送成功！');
-                    } else {
-                        throw new Error('更新失败');
+                    // 如果开启了自动同步，立即加载数据
+                    if (autoSyncEnabled) {
+                        await loadFromCloud();
                     }
                 } else {
-                    // Gist 不存在，创建新的
-                    const createData = {
-                        description: 'SIM卡投资数据同步',
-                        public: true,
-                        files: {
-                            'sim-investment.json': {
-                                content: JSON.stringify(data, null, 2)
-                            }
-                        }
-                    };
-
-                    const createResponse = await fetch('https://api.github.com/gists', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(createData)
-                    });
-
-                    if (createResponse.ok) {
-                        const newGist = await createResponse.json();
-                        const newId = newGist.id;
-                        
-                        // 保存新ID
-                        gistId = newId;
-                        localStorage.setItem('gist_id', newId);
-                        document.getElementById('gistId').value = newId;
-                        
-                        updateSyncIndicator('synced');
-                        alert(`✅ Gist 已创建！\n新ID: ${newId}\n请在其他设备输入这个ID`);
-                    } else {
-                        throw new Error('创建失败');
-                    }
+                    throw new Error('连接失败');
                 }
             } catch (error) {
-                console.error('推送失败:', error);
                 updateSyncIndicator('error');
-                alert('❌ 推送失败: ' + error.message);
+                showToast('❌ 连接失败，请检查URL', 'error');
             }
         }
 
-        // 从 Gist 拉取数据
-        async function syncFromGist() {
-            if (!gistId) {
-                alert('请先设置 Gist ID');
-                return;
-            }
-
-            updateSyncIndicator('syncing');
+        // 保存到云端
+        async function saveToCloud() {
+            if (!scriptUrl) return false;
             
             try {
-                const response = await fetch(`https://api.github.com/gists/${gistId}`);
+                updateSyncIndicator('syncing');
+                
+                const formData = new FormData();
+                formData.append('action', 'save');
+                formData.append('data', JSON.stringify(records));
+                
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    body: formData
+                });
                 
                 if (response.ok) {
-                    const gist = await response.json();
-                    
-                    // 获取文件内容
-                    const filename = 'sim-investment.json';
-                    if (gist.files && gist.files[filename]) {
-                        const content = JSON.parse(gist.files[filename].content);
-                        
-                        if (content.records && content.records.length > 0) {
-                            // 合并数据
-                            const merged = mergeData(records, content.records);
-                            
-                            if (JSON.stringify(merged) !== JSON.stringify(records)) {
-                                records = merged;
-                                localStorage.setItem('allRecords', JSON.stringify(records));
-                                
-                                // 刷新显示
-                                calculateTotals();
-                                displayRecords(
-                                    document.getElementById('typeFilter').value,
-                                    document.getElementById('searchInput').value
-                                );
-                                
-                                updateSyncIndicator('synced');
-                                alert('✅ 拉取成功！合并了 ' + content.records.length + ' 条记录');
-                            } else {
-                                updateSyncIndicator('synced');
-                                alert('✅ 已是最新数据');
-                            }
-                        } else {
-                            updateSyncIndicator('synced');
-                            alert('⚠️ 云端没有记录');
-                        }
+                    const result = await response.json();
+                    if (result.success) {
+                        updateSyncIndicator('synced');
+                        return true;
                     } else {
-                        alert('⚠️ Gist 中没有数据文件');
+                        throw new Error(result.error);
                     }
                 } else {
-                    throw new Error('Gist 不存在或无法访问');
+                    throw new Error('网络错误');
                 }
             } catch (error) {
-                console.error('拉取失败:', error);
+                console.error('保存失败:', error);
                 updateSyncIndicator('error');
-                alert('❌ 拉取失败: ' + error.message);
+                return false;
             }
+        }
+
+        // 从云端加载
+        async function loadFromCloud() {
+            if (!scriptUrl) return false;
+            
+            try {
+                updateSyncIndicator('syncing');
+                
+                const response = await fetch(`${scriptUrl}?action=get`);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.success && result.records && result.records.length > 0) {
+                        const cloudRecords = result.records;
+                        
+                        // 合并数据
+                        const merged = mergeData(records, cloudRecords);
+                        
+                        if (JSON.stringify(merged) !== JSON.stringify(records)) {
+                            records = merged;
+                            localStorage.setItem('allRecords', JSON.stringify(records));
+                            
+                            calculateTotals();
+                            displayRecords();
+                            
+                            showToast(`✅ 同步了 ${cloudRecords.length} 条记录`);
+                        }
+                    }
+                    
+                    updateSyncIndicator('synced');
+                    return true;
+                } else {
+                    throw new Error('网络错误');
+                }
+            } catch (error) {
+                console.error('加载失败:', error);
+                updateSyncIndicator('error');
+                return false;
+            }
+        }
+
+        // 手动同步
+        async function manualSync() {
+            if (!scriptUrl) {
+                alert('请先设置部署的 URL');
+                return;
+            }
+            
+            await saveToCloud();
+            setTimeout(async () => {
+                await loadFromCloud();
+                showToast('✅ 同步完成');
+            }, 1000);
         }
 
         // 合并数据
@@ -890,7 +1036,6 @@
                 if (!existing) {
                     allRecords.push(cloudRecord);
                 } else {
-                    // 取最新的
                     if (new Date(cloudRecord.lastEditedAt) > new Date(existing.lastEditedAt)) {
                         Object.assign(existing, cloudRecord);
                     }
@@ -900,7 +1045,7 @@
             return allRecords;
         }
 
-        // ================== 原有功能 ==================
+        // ================== 业务逻辑 ==================
 
         function switchType(type) {
             if (type === 'invest') {
@@ -1029,7 +1174,18 @@
         }
 
         // 提交表单
-        document.getElementById('investForm').addEventListener('submit', function(e) {
+        async function submitRecord(newRecord) {
+            records.push(newRecord);
+            localStorage.setItem('allRecords', JSON.stringify(records));
+            calculateTotals();
+            displayRecords();
+            
+            if (scriptUrl && autoSyncEnabled) {
+                await saveToCloud();
+            }
+        }
+
+        document.getElementById('investForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const newRecord = {
                 id: Date.now().toString(),
@@ -1043,21 +1199,16 @@
                 lastEditor: document.getElementById('investCreator').value,
                 lastEditedAt: new Date().toISOString()
             };
-            records.push(newRecord);
-            localStorage.setItem('allRecords', JSON.stringify(records));
-            calculateTotals();
-            displayRecords(
-                document.getElementById('typeFilter').value,
-                document.getElementById('searchInput').value
-            );
+            
+            await submitRecord(newRecord);
+            
             this.reset();
             document.getElementById('investDate').valueAsDate = new Date();
             document.getElementById('investAmount').value = '0.00';
-            updateSyncIndicator('synced');
-            alert('添加成功！记得点击📤推送同步到其他设备');
+            showToast('✅ 添加成功，已自动同步');
         });
 
-        document.getElementById('simForm').addEventListener('submit', function(e) {
+        document.getElementById('simForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const newRecord = {
                 id: Date.now().toString(),
@@ -1072,20 +1223,15 @@
                 lastEditor: document.getElementById('simCreator').value,
                 lastEditedAt: new Date().toISOString()
             };
-            records.push(newRecord);
-            localStorage.setItem('allRecords', JSON.stringify(records));
-            calculateTotals();
-            displayRecords(
-                document.getElementById('typeFilter').value,
-                document.getElementById('searchInput').value
-            );
+            
+            await submitRecord(newRecord);
+            
             this.reset();
             document.getElementById('simDate').valueAsDate = new Date();
             document.getElementById('simQuantity').value = '0';
             document.getElementById('simAmount').value = '0.00';
             document.getElementById('simPrice').value = '0.00';
-            updateSyncIndicator('synced');
-            alert('添加成功！记得点击📤推送同步到其他设备');
+            showToast('✅ 添加成功，已自动同步');
         });
 
         // 筛选
@@ -1103,17 +1249,18 @@
         function hideClearConfirm() {
             document.getElementById('clearConfirm').classList.remove('show');
         }
-        function clearAllRecords() {
+        async function clearAllRecords() {
             records = [];
             localStorage.setItem('allRecords', JSON.stringify(records));
             calculateTotals();
-            displayRecords(
-                document.getElementById('typeFilter').value,
-                document.getElementById('searchInput').value
-            );
+            displayRecords();
+            
+            if (scriptUrl && autoSyncEnabled) {
+                await saveToCloud();
+            }
+            
             hideClearConfirm();
-            updateSyncIndicator('synced');
-            alert('已清空');
+            showToast('已清空');
         }
 
         // 删除
@@ -1125,30 +1272,30 @@
             pendingDeleteId = null;
             document.getElementById('deleteConfirm').classList.remove('show');
         }
-        function confirmDelete() {
+        async function confirmDelete() {
             if (pendingDeleteId) {
                 records = records.filter(r => r.id !== pendingDeleteId);
                 localStorage.setItem('allRecords', JSON.stringify(records));
                 calculateTotals();
-                displayRecords(
-                    document.getElementById('typeFilter').value,
-                    document.getElementById('searchInput').value
-                );
+                displayRecords();
+                
+                if (scriptUrl && autoSyncEnabled) {
+                    await saveToCloud();
+                }
+                
                 hideDeleteConfirm();
-                updateSyncIndicator('synced');
-                alert('已删除');
+                showToast('已删除');
             }
         }
 
-        // 初始化
-        document.getElementById('investDate').valueAsDate = new Date();
-        document.getElementById('simDate').valueAsDate = new Date();
-        document.getElementById('gistId').value = gistId;
-        
-        calculateTotals();
-        displayRecords();
+        // 自动同步：打开页面时加载云端数据
+        if (scriptUrl && autoSyncEnabled) {
+            setTimeout(() => {
+                loadFromCloud();
+            }, 1000);
+        }
 
-        // 点击外部关闭面板
+        // 点击外部关闭对话框
         window.onclick = function(e) {
             if (e.target === document.getElementById('clearConfirm')) hideClearConfirm();
             if (e.target === document.getElementById('deleteConfirm')) hideDeleteConfirm();
